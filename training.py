@@ -8,19 +8,19 @@ import numpy as np
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(device)
 print("Loading data")
-ds = dataset("train_balanced.parquet")
-dataloader = DataLoader(ds, batch_size=5096, shuffle=True, collate_fn=collate_fn, num_workers=20)
+ds = dataset("graphes_training.npy")
+dataloader = DataLoader(ds, batch_size=512, shuffle=True, collate_fn=collate_fn, num_workers=20)
 print("Creating model")
 print(len(dataloader))
-model = Model(4, 64).to(device)
+model = Model(4, 128).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 loss_fn = BCELoss()
 li_total = []
-for epoch in range(10):
+n_epoch = 10000
+for epoch in range(n_epoch):
     model.train()
     li_loss = []
     for i, (graphe, protein) in enumerate(dataloader):
-        print(i)
         protein = protein.to(device)
         graphe.x = graphe.x.to(device)
         graphe.edge_index = graphe.edge_index.to(device)
@@ -36,5 +36,6 @@ for epoch in range(10):
     print(f"Epoch: {epoch} Loss: {np.mean(li_loss)}")
     li_total.append(np.mean(li_loss))
     torch.save(model.state_dict(), "model.pth")
-with open('test.npy', 'wb') as f:
-    np.save(f, np.array(li_total))
+    if epoch % 10 == 0:
+        with open('loss.npy', 'wb') as f:
+            np.save(f, np.array(li_total))
